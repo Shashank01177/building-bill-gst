@@ -2,10 +2,11 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches: [ master, main ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-apk:
@@ -48,21 +49,37 @@ jobs:
           cd android
           ./gradlew assembleDebug --stacktrace
 
+      - name: Copy APK with friendly name
+        run: |
+          mkdir -p output-apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk output-apk/BuildingBillManager.apk
+
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: building-bill-manager-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          name: BuildingBillManager-APK
+          path: output-apk/BuildingBillManager.apk
+          retention-days: 90
 
-      - name: Build Release APK
-        run: |
-          cd android
-          ./gradlew assembleRelease --stacktrace
-
-      - name: Upload Release APK Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
         with:
-          name: building-bill-manager-release-apk
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
-          retention-days: 30
+          tag_name: v1.0.0
+          name: Building Bill & GST Manager v1.0.0
+          body: |
+            ### 📱 Building Bill & GST Manager Android App
+            Download **BuildingBillManager.apk** below and install it directly on your Android phone!
+            
+            **Features:**
+            - Store bills sent to tenants/organisations
+            - Split payment tracking (Cash & Online amounts + UTR)
+            - Attached bill & receipt proof photos
+            - Automatic balance & overdue tracking
+            - Input GST paid on building expenses & Net GST calculator
+            - Instant PDF Tax Invoices & Payment Receipts
+          files: output-apk/BuildingBillManager.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
