@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, Upload, CheckCircle2, Wallet, CreditCard, Banknote, Trash2, ArrowRight } from 'lucide-react';
-import { db, type Bill, type Organization, type Payment } from '../db';
+import { X, Camera, Upload, CheckCircle2, Wallet, CreditCard, Banknote, Trash2, Calendar, Percent } from 'lucide-react';
+import { db, type Organization, type Payment } from '../db';
 import { compressAndConvertImage, formatCurrency } from '../utils/formatters';
 
 interface AddPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   organizations: Organization[];
-  bills: Bill[];
   onPaymentRecorded: () => void;
-  initialBillId?: number;
   initialOrgId?: number;
 }
 
@@ -17,18 +15,17 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
   isOpen,
   onClose,
   organizations,
-  bills,
   onPaymentRecorded,
-  initialBillId,
   initialOrgId
 }) => {
   const [orgId, setOrgId] = useState<number | ''>(initialOrgId || '');
-  const [billId, setBillId] = useState<number | ''>(initialBillId || '');
   const [paymentNumber, setPaymentNumber] = useState('');
+  const [billingMonth, setBillingMonth] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [cashAmount, setCashAmount] = useState<number>(0);
   const [onlineAmount, setOnlineAmount] = useState<number>(0);
   const [onlineRefNumber, setOnlineRefNumber] = useState('');
+  const [gstRate, setGstRate] = useState<number>(0);
   const [notes, setNotes] = useState('');
 
   // Attachment
@@ -45,32 +42,24 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
       const rand = Math.floor(100 + Math.random() * 900);
       setPaymentNumber(`REC-${yr}-${rand}`);
       setPaymentDate(new Date().toISOString().split('T')[0]);
+
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      setBillingMonth(`${monthNames[now.getMonth()]} ${now.getFullYear()}`);
       setError(null);
 
-      if (initialBillId) {
-        const b = bills.find(item => item.id === initialBillId);
-        if (b) {
-          setBillId(b.id!);
-          setOrgId(b.orgId);
-          setOnlineAmount(b.balanceAmount > 0 ? b.balanceAmount : 0);
-          setCashAmount(0);
-        }
-      } else if (initialOrgId) {
+      if (initialOrgId) {
         setOrgId(initialOrgId);
+        populateOrgDefaultRent(initialOrgId);
       }
     }
-  }, [isOpen, initialBillId, initialOrgId, bills]);
+  }, [isOpen, initialOrgId]);
 
-  const handleBillSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const bId = Number(e.target.value);
-    setBillId(bId || '');
-    if (bId) {
-      const b = bills.find(item => item.id === bId);
-      if (b) {
-        setOrgId(b.orgId);
-        if (cashAmount === 0 && onlineAmount === 0) {
-          setOnlineAmount(b.balanceAmount);
-        }
+  const populateOrgDefaultRent = (selectedId: number) => {
+    const org = organizations.find(o => o.id === selectedId);
+    if (org && org.monthlyRent) {
+      // Suggest agreed rent as default online amount if empty
+      if (cashAmount === 0 && onlineAmount === 0) {
+        setOnlineAmount(org.monthlyRent + (org.monthlyMaintenance || 0));
       }
     }
   };
@@ -78,13 +67,14 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
   const handleOrgSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const oId = Number(e.target.value);
     setOrgId(oId || '');
-    setBillId('');
+    if (oId) {
+      populateOrgDefaultRent(oId);
+    }
   };
 
-  const orgBills = bills.filter(b => (!orgId || b.orgId === orgId) && b.balanceAmount > 0);
-  const selectedBill = bills.find(b => b.id === Number(billId));
-
-  const totalAmountReceived = (Number(cashAmount) || 0) + (Number(onlineAmount) || 0);
+  const baseReceived = (Number(cashAmount) || 0) + (Number(onlineAmount) || 0);
+  const calculatedGst = gstRate > 0 ? Math.round((baseReceived * gstRate) / 100) : 0;
+  const totalAmountReceived = baseReceived + calculatedGst;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -110,7 +100,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
       setError('Please select an organisation.');
       return;
     }
-    if (totalAmountReceived <= 0) {
+    if (baseReceived <= 0) {
       setError('Please enter either a Cash amount or Online amount paid.');
       return;
     }
@@ -127,14 +117,15 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
     const newPayment: Payment = {
       paymentNumber: paymentNumber.trim() || `REC-${Date.now()}`,
-      billId: billId ? Number(billId) : undefined,
-      billNumber: selectedBill?.billNumber,
       orgId: org.id!,
       orgName: org.name,
+      billingMonth: billingMonth.trim() || undefined,
       paymentDate,
       cashAmount: Number(cashAmount) || 0,
       onlineAmount: Number(onlineAmount) || 0,
-      onlineRefNumber: onlineRefNumber.trim(),
+      onlineRefNumber: onlineRefNumber.trim() || undefined,
+      gstRate: gstRate > 0 ? gstRate : undefined,
+      gstAmount: calculatedGst > 0 ? calculatedGst : undefined,
       totalAmount: totalAmountReceived,
       paymentMode: mode,
       receiptAttachment: attachment,
@@ -145,26 +136,6 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
     };
 
     await db.payments.add(newPayment);
-
-    // If linked to a bill, update bill's paid amount & status
-    if (selectedBill && selectedBill.id) {
-      const newPaid = selectedBill.paidAmount + totalAmountReceived;
-      const newBalance = Math.max(0, selectedBill.totalAmount - newPaid);
-      let newStatus: Bill['status'] = selectedBill.status;
-
-      if (newBalance <= 0) {
-        newStatus = 'paid';
-      } else if (newPaid > 0) {
-        newStatus = 'partial';
-      }
-
-      await db.bills.update(selectedBill.id, {
-        paidAmount: newPaid,
-        balanceAmount: newBalance,
-        status: newStatus
-      });
-    }
-
     onPaymentRecorded();
     onClose();
   };
@@ -182,7 +153,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-white">Record Tenant Payment</h2>
-              <p className="text-xs text-slate-400">Cash & online split with receipt voucher</p>
+              <p className="text-xs text-slate-400">Store Cash & Online split with bill receipt photo</p>
             </div>
           </div>
           <button 
@@ -201,11 +172,11 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             </div>
           )}
 
-          {/* Org & Linked Bill */}
-          <div className="space-y-3">
+          {/* Org & Month */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Business Organisation *
+                Business Organisation / Tenant *
               </label>
               <select
                 value={orgId}
@@ -213,7 +184,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 required
                 className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
               >
-                <option value="">-- Select Tenant Organisation --</option>
+                <option value="">-- Select Organisation --</option>
                 {organizations.map(o => (
                   <option key={o.id} value={o.id}>
                     {o.name} ({o.unitNo})
@@ -224,27 +195,15 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Against Bill / Invoice (Optional)
+                Billing Month / Period
               </label>
-              <select
-                value={billId}
-                onChange={handleBillSelect}
-                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-              >
-                <option value="">-- General Payment / Direct Receipt --</option>
-                {orgBills.map(b => (
-                  <option key={b.id} value={b.id}>
-                    {b.billNumber} ({b.billingMonth}) - Due: {formatCurrency(b.balanceAmount)}
-                  </option>
-                ))}
-              </select>
-              {selectedBill && (
-                <div className="mt-2 text-xs text-amber-300 flex justify-between bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 font-medium">
-                  <span>Invoice Total: {formatCurrency(selectedBill.totalAmount)}</span>
-                  <span>Paid: {formatCurrency(selectedBill.paidAmount)}</span>
-                  <span className="font-bold text-amber-400">Balance: {formatCurrency(selectedBill.balanceAmount)}</span>
-                </div>
-              )}
+              <input
+                type="text"
+                value={billingMonth}
+                onChange={(e) => setBillingMonth(e.target.value)}
+                placeholder="e.g. November 2026"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              />
             </div>
           </div>
 
@@ -252,7 +211,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Receipt Number
+                Receipt / Voucher Number
               </label>
               <input
                 type="text"
@@ -280,7 +239,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
           <div className="rounded-3xl p-4 bg-white/[0.02] border border-white/10 space-y-3.5">
             <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
               <Banknote className="w-4 h-4" />
-              <span>Split Payment Breakdown (Cash & Online)</span>
+              <span>Payment Breakdown (Cash & Online)</span>
             </h3>
 
             {/* Cash Input */}
@@ -339,25 +298,42 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
               </div>
             )}
 
+            {/* GST Selector */}
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-3">
+              <div className="flex items-center space-x-2">
+                <Percent className="w-4 h-4 text-purple-400" />
+                <label className="text-xs font-semibold text-slate-300">GST on Payment:</label>
+              </div>
+              <select
+                value={gstRate}
+                onChange={(e) => setGstRate(Number(e.target.value))}
+                className="bg-slate-900/90 border border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:outline-none"
+              >
+                <option value={0}>0% (No GST)</option>
+                <option value={5}>5%</option>
+                <option value={12}>12%</option>
+                <option value={18}>18% (Commercial Rent GST)</option>
+                <option value={28}>28%</option>
+              </select>
+            </div>
+
             {/* Total Received Summary */}
             <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-slate-300 font-semibold">Total Amount Received:</span>
-              <span className="text-lg font-black text-emerald-400">
+              <div>
+                <span className="text-xs text-slate-300 font-semibold block">Total Amount Received:</span>
+                {calculatedGst > 0 && (
+                  <span className="text-[11px] text-purple-300">
+                    Includes GST ({gstRate}%): +{formatCurrency(calculatedGst)}
+                  </span>
+                )}
+              </div>
+              <span className="text-lg sm:text-xl font-black text-emerald-400">
                 {formatCurrency(totalAmountReceived)}
               </span>
             </div>
-
-            {selectedBill && (
-              <div className="text-[11px] text-slate-400 flex justify-between">
-                <span>Remaining balance after this payment:</span>
-                <span className={`font-bold ${selectedBill.balanceAmount - totalAmountReceived <= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {formatCurrency(Math.max(0, selectedBill.balanceAmount - totalAmountReceived))}
-                </span>
-              </div>
-            )}
           </div>
 
-          {/* Attach Payment Receipt Proof */}
+          {/* Attach Payment Receipt / Bill Proof */}
           <div className="border border-dashed border-white/15 rounded-3xl p-4 bg-white/[0.02] text-center">
             <input
               type="file"
@@ -372,8 +348,8 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 <div className="flex items-center space-x-3 overflow-hidden text-left">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div className="truncate">
-                    <p className="text-xs font-bold text-white truncate">{attachmentName || 'Payment Slip'}</p>
-                    <p className="text-[10px] text-emerald-300">Payment receipt stored in app</p>
+                    <p className="text-xs font-bold text-white truncate">{attachmentName || 'Payment Bill'}</p>
+                    <p className="text-[10px] text-emerald-300">Bill/receipt photo stored</p>
                   </div>
                 </div>
                 <button

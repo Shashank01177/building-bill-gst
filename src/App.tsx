@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { 
   Building2, 
-  FileText, 
   Wallet, 
   Receipt, 
   Settings, 
@@ -13,11 +12,9 @@ import {
 
 import { db, initDemoDataIfEmpty, type Organization } from './db';
 import { DashboardView } from './components/DashboardView';
-import { BillsView } from './components/BillsView';
 import { PaymentsView } from './components/PaymentsView';
 import { OrganizationsView } from './components/OrganizationsView';
 import { GstTrackerView } from './components/GstTrackerView';
-import { AddBillModal } from './components/AddBillModal';
 import { AddPaymentModal } from './components/AddPaymentModal';
 import { AddOrgModal } from './components/AddOrgModal';
 import { AddGstExpenseModal } from './components/AddGstExpenseModal';
@@ -25,17 +22,15 @@ import { SettingsModal } from './components/SettingsModal';
 import { DocumentViewerModal } from './components/DocumentViewerModal';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bills' | 'payments' | 'tenants' | 'gst'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'payments' | 'tenants' | 'gst'>('dashboard');
 
   // Modals state
-  const [isAddBillOpen, setIsAddBillOpen] = useState(false);
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [isAddOrgOpen, setIsAddOrgOpen] = useState(false);
   const [isAddGstOpen, setIsAddGstOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Selected entities for modals
-  const [selectedBillIdForPayment, setSelectedBillIdForPayment] = useState<number | undefined>(undefined);
   const [selectedOrgIdForAction, setSelectedOrgIdForAction] = useState<number | undefined>(undefined);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
 
@@ -68,13 +63,7 @@ export function App() {
 
   const profile = profileList && profileList.length > 0 ? profileList[0] : null;
 
-  const handleOpenAddBill = (orgId?: number) => {
-    setSelectedOrgIdForAction(orgId);
-    setIsAddBillOpen(true);
-  };
-
-  const handleOpenAddPayment = (billId?: number, orgId?: number) => {
-    setSelectedBillIdForPayment(billId);
+  const handleOpenAddPayment = (orgId?: number) => {
     setSelectedOrgIdForAction(orgId);
     setIsAddPaymentOpen(true);
   };
@@ -94,8 +83,6 @@ export function App() {
     });
   };
 
-  const pendingBillsCount = bills.filter(b => b.balanceAmount > 0).length;
-
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative">
       {/* Subtle Background Glows */}
@@ -113,7 +100,7 @@ export function App() {
               <span>{profile?.buildingName || 'Building Bill Manager'}</span>
             </h1>
             <p className="text-[11px] text-slate-400 truncate max-w-[180px] sm:max-w-none">
-              {profile?.ownerName ? `${profile.ownerName} • Commercial Space Billing` : 'Tenant Billing & Payment Tracker'}
+              {profile?.ownerName ? `${profile.ownerName} • Tenant & GST Tracker` : 'Tenant Billing & Payment Tracker'}
             </p>
           </div>
         </div>
@@ -124,29 +111,17 @@ export function App() {
           <div className="relative">
             <button
               onClick={() => setIsQuickMenuOpen(!isQuickMenuOpen)}
-              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-indigo-600/30 transition active:scale-95"
+              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center space-x-1.5 shadow-lg shadow-emerald-500/25 transition active:scale-95"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Add</span>
+              <Plus className="w-4 h-4" />
+              <span>Record</span>
               <ChevronDown className="w-3 h-3 opacity-80" />
             </button>
 
             {isQuickMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsQuickMenuOpen(false)} />
-                <div className="absolute right-0 mt-2 w-52 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl py-2 z-50 text-xs animate-slide-up">
-                  <button
-                    onClick={() => {
-                      setIsQuickMenuOpen(false);
-                      handleOpenAddBill();
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-white/5 flex items-center space-x-2.5 text-slate-200 transition"
-                  >
-                    <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
-                      <FileText className="w-3.5 h-3.5" />
-                    </div>
-                    <span>Send New Bill</span>
-                  </button>
+                <div className="absolute right-0 mt-2 w-56 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl py-2 z-50 text-xs animate-slide-up">
                   <button
                     onClick={() => {
                       setIsQuickMenuOpen(false);
@@ -157,7 +132,7 @@ export function App() {
                     <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
                       <Wallet className="w-3.5 h-3.5" />
                     </div>
-                    <span>Record Payment</span>
+                    <span>Record Tenant Payment</span>
                   </button>
                   <button
                     onClick={() => {
@@ -209,26 +184,18 @@ export function App() {
             bills={bills}
             payments={payments}
             gstExpenses={gstExpenses}
-            onOpenAddBill={() => handleOpenAddBill()}
-            onOpenAddPayment={(billId) => handleOpenAddPayment(billId)}
+            onOpenAddBill={() => handleOpenAddPayment()}
+            onOpenAddPayment={() => handleOpenAddPayment()}
             onOpenAddOrg={() => {
               setEditingOrg(null);
               setIsAddOrgOpen(true);
             }}
             onOpenAddGstExpense={() => setIsAddGstOpen(true)}
             onViewDocument={handleViewDocument}
-            onNavigateTab={setActiveTab}
-          />
-        )}
-
-        {activeTab === 'bills' && (
-          <BillsView
-            bills={bills}
-            profile={profile}
-            onOpenAddBill={() => handleOpenAddBill()}
-            onOpenAddPayment={(billId) => handleOpenAddPayment(billId)}
-            onViewDocument={handleViewDocument}
-            onRefresh={() => {}}
+            onNavigateTab={(tab) => {
+              if (tab === 'bills') setActiveTab('payments');
+              else setActiveTab(tab);
+            }}
           />
         )}
 
@@ -252,8 +219,8 @@ export function App() {
               setIsAddOrgOpen(true);
             }}
             onEditOrg={handleOpenEditOrg}
-            onOpenAddBillForOrg={(orgId) => handleOpenAddBill(orgId)}
-            onOpenAddPaymentForOrg={(orgId) => handleOpenAddPayment(undefined, orgId)}
+            onOpenAddBillForOrg={(orgId) => handleOpenAddPayment(orgId)}
+            onOpenAddPaymentForOrg={(orgId) => handleOpenAddPayment(orgId)}
             onRefresh={() => {}}
           />
         )}
@@ -269,12 +236,12 @@ export function App() {
         )}
       </main>
 
-      {/* 🚀 FLOATING DOCK BOTTOM NAVIGATION (Optimized for Android Touch) */}
+      {/* 🚀 STREAMLINED FLOATING DOCK BOTTOM NAVIGATION (No redundant Bills tab) */}
       <div className="fixed bottom-0 left-0 right-0 z-40 p-2 sm:p-3 pointer-events-none flex justify-center pb-safe">
-        <nav className="pointer-events-auto bg-slate-900/95 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl sm:rounded-full px-2 py-1.5 flex items-center justify-around w-full max-w-md">
+        <nav className="pointer-events-auto bg-slate-900/95 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl sm:rounded-full px-3 py-1.5 flex items-center justify-around w-full max-w-md">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+            className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-xl sm:rounded-full transition-all duration-200 relative ${
               activeTab === 'dashboard' 
                 ? 'text-indigo-400 bg-indigo-500/15 font-black scale-105' 
                 : 'text-slate-400 hover:text-slate-200'
@@ -286,7 +253,7 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('tenants')}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+            className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-xl sm:rounded-full transition-all duration-200 relative ${
               activeTab === 'tenants' 
                 ? 'text-sky-400 bg-sky-500/15 font-black scale-105' 
                 : 'text-slate-400 hover:text-slate-200'
@@ -297,27 +264,8 @@ export function App() {
           </button>
 
           <button
-            onClick={() => setActiveTab('bills')}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
-              activeTab === 'bills' 
-                ? 'text-indigo-400 bg-indigo-500/15 font-black scale-105' 
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <div className="relative">
-              <FileText className="w-5 h-5 mb-0.5" />
-              {pendingBillsCount > 0 && (
-                <span className="absolute -top-1 -right-2 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-[14px] text-center shadow">
-                  {pendingBillsCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] tracking-tight">Bills</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('payments')}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+            className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-xl sm:rounded-full transition-all duration-200 relative ${
               activeTab === 'payments' 
                 ? 'text-emerald-400 bg-emerald-500/15 font-black scale-105' 
                 : 'text-slate-400 hover:text-slate-200'
@@ -329,7 +277,7 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('gst')}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+            className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-xl sm:rounded-full transition-all duration-200 relative ${
               activeTab === 'gst' 
                 ? 'text-amber-400 bg-amber-500/15 font-black scale-105' 
                 : 'text-slate-400 hover:text-slate-200'
@@ -342,27 +290,13 @@ export function App() {
       </div>
 
       {/* Modals */}
-      <AddBillModal
-        isOpen={isAddBillOpen}
-        onClose={() => {
-          setIsAddBillOpen(false);
-          setSelectedOrgIdForAction(undefined);
-        }}
-        organizations={organizations}
-        initialOrgId={selectedOrgIdForAction}
-        onBillCreated={() => {}}
-      />
-
       <AddPaymentModal
         isOpen={isAddPaymentOpen}
         onClose={() => {
           setIsAddPaymentOpen(false);
-          setSelectedBillIdForPayment(undefined);
           setSelectedOrgIdForAction(undefined);
         }}
         organizations={organizations}
-        bills={bills}
-        initialBillId={selectedBillIdForPayment}
         initialOrgId={selectedOrgIdForAction}
         onPaymentRecorded={() => {}}
       />

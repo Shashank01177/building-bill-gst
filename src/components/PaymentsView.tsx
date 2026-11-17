@@ -9,9 +9,9 @@ import {
   Download, 
   Trash2, 
   Calendar,
-  Building2,
-  CheckCircle,
-  X
+  Share2,
+  X,
+  Percent
 } from 'lucide-react';
 import { db, type Payment, type BuildingProfile } from '../db';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -38,7 +38,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
   const filteredPayments = payments.filter(p => {
     const matchesSearch = p.paymentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.orgName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.billNumber && p.billNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (p.billingMonth && p.billingMonth.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (p.onlineRefNumber && p.onlineRefNumber.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (modeFilter === 'all') return matchesSearch;
@@ -51,28 +51,25 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
   const handleDeletePayment = async (p: Payment) => {
     if (confirm(`Are you sure you want to delete payment ${p.paymentNumber}?`)) {
-      // Reconcile linked bill
-      if (p.billId) {
-        const bill = await db.bills.get(p.billId);
-        if (bill) {
-          const newPaid = Math.max(0, bill.paidAmount - p.totalAmount);
-          const newBalance = bill.totalAmount - newPaid;
-          let newStatus = bill.status;
-          if (newPaid === 0) newStatus = 'unpaid';
-          else if (newBalance > 0) newStatus = 'partial';
-          else newStatus = 'paid';
-
-          await db.bills.update(bill.id!, {
-            paidAmount: newPaid,
-            balanceAmount: newBalance,
-            status: newStatus
-          });
-        }
-      }
-
       await db.payments.delete(p.id!);
       onRefresh();
     }
+  };
+
+  const handleShareWhatsApp = (p: Payment) => {
+    const text = `*Payment Receipt from ${profile?.buildingName || 'Building Management'}*
+Receipt No: ${p.paymentNumber}
+Tenant: ${p.orgName}
+Period: ${p.billingMonth || 'Rent Payment'}
+Date: ${formatDate(p.paymentDate)}
+Amount Received in Cash: ${formatCurrency(p.cashAmount)}
+Amount Received Online: ${formatCurrency(p.onlineAmount)} ${p.onlineRefNumber ? `(Ref: ${p.onlineRefNumber})` : ''}
+*Total Received: ${formatCurrency(p.totalAmount)}*
+
+Thank you for your payment!`;
+
+    const encoded = encodeURIComponent(text);
+    window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
   };
 
   return (
@@ -84,9 +81,9 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
               <Wallet className="w-4 h-4" />
             </div>
-            <span>Payment Receipts</span>
+            <span>Tenant Payments & Bills</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">Cash and online rent collection records with proof slips</p>
+          <p className="text-xs text-slate-400 mt-0.5">Store Cash & Online rent bills paid by tenants with proof slips</p>
         </div>
         <button
           onClick={onOpenAddPayment}
@@ -138,7 +135,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search payments by receipt #, tenant, bill # or UTR..."
+            placeholder="Search payments by receipt #, tenant, month or UTR..."
             className="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 backdrop-blur-md transition"
           />
           {searchTerm && (
@@ -173,9 +170,9 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       {filteredPayments.length === 0 ? (
         <div className="glass-card rounded-3xl p-12 text-center flex flex-col items-center">
           <Wallet className="w-12 h-12 text-slate-600 mb-3" />
-          <h4 className="text-white font-bold text-base">No payment records found</h4>
+          <h4 className="text-white font-bold text-base">No payments recorded</h4>
           <p className="text-slate-400 text-xs mt-1 max-w-sm">
-            {searchTerm ? 'Try adjusting your search criteria.' : 'Click "Record Payment" to log cash or online collections.'}
+            {searchTerm ? 'Try adjusting your search query.' : 'Click "Record Payment" to log cash or online collections.'}
           </p>
         </div>
       ) : (
@@ -195,7 +192,12 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                     <div>
                       <div className="flex items-center space-x-2">
                         <span className="font-mono text-xs font-bold text-emerald-400">{p.paymentNumber}</span>
-                        <span className="text-[10px] text-slate-400 bg-white/5 px-2 py-0.5 rounded-full font-medium">
+                        {p.billingMonth && (
+                          <span className="text-[10px] text-slate-300 bg-white/5 px-2 py-0.5 rounded-full font-semibold">
+                            {p.billingMonth}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-slate-400 font-medium">
                           {formatDate(p.paymentDate)}
                         </span>
                       </div>
@@ -218,14 +220,6 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                     {p.paymentMode === 'mixed' ? 'Cash + Online' : p.paymentMode}
                   </span>
                 </div>
-
-                {p.billNumber && (
-                  <div className="mb-2.5">
-                    <span className="text-[11px] text-indigo-300 font-mono bg-indigo-500/15 px-2 py-0.5 rounded-lg border border-indigo-500/25">
-                      Against Bill: {p.billNumber}
-                    </span>
-                  </div>
-                )}
 
                 {/* Cash & Online Breakdown Card */}
                 <div className="rounded-2xl p-3.5 bg-black/20 border border-white/5 space-y-2 text-xs mb-3">
@@ -256,6 +250,16 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                     </div>
                   )}
 
+                  {p.gstAmount && p.gstAmount > 0 && (
+                    <div className="text-[11px] text-purple-300 flex items-center justify-between pt-1">
+                      <span className="flex items-center gap-1">
+                        <Percent className="w-3 h-3" />
+                        GST Included ({p.gstRate}%):
+                      </span>
+                      <span className="font-bold">+{formatCurrency(p.gstAmount)}</span>
+                    </div>
+                  )}
+
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between">
                     <span className="font-bold text-slate-200">Total Received:</span>
                     <span className="font-black text-emerald-400 text-base">
@@ -279,7 +283,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                       className="flex items-center space-x-1.5 text-[11px] text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-xl border border-emerald-500/20 transition"
                     >
                       <Paperclip className="w-3.5 h-3.5" />
-                      <span>View Receipt Slip</span>
+                      <span>View Bill Slip</span>
                     </button>
                   ) : (
                     <span className="text-[10px] text-slate-600">No attached proof</span>
@@ -287,6 +291,14 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-1.5">
+                  <button
+                    onClick={() => handleShareWhatsApp(p)}
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-emerald-400 hover:text-emerald-300 transition active:scale-95"
+                    title="Share Receipt on WhatsApp"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
+
                   <button
                     onClick={() => generatePaymentReceiptPDF(p, profile)}
                     className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-emerald-400 hover:text-emerald-300 transition active:scale-95"

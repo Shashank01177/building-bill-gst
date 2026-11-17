@@ -55,11 +55,14 @@ export interface Payment {
   billNumber?: string;
   orgId: number;
   orgName: string;
+  billingMonth?: string;
   paymentDate: string;
   cashAmount: number;
   onlineAmount: number;
   onlineRefNumber?: string;
   totalAmount: number;
+  gstRate?: number;
+  gstAmount?: number;
   paymentMode: 'cash' | 'online' | 'mixed';
   receiptAttachment?: string; // Base64
   receiptAttachmentName?: string;
