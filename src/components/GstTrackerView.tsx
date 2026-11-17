@@ -6,12 +6,11 @@ import {
   Percent, 
   Paperclip, 
   Trash2, 
-  CheckCircle2, 
   TrendingDown, 
   TrendingUp,
   Download,
   Calendar,
-  Layers
+  X
 } from 'lucide-react';
 import { db, type GstExpense, type Bill } from '../db';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -41,9 +40,6 @@ export const GstTrackerView: React.FC<GstTrackerViewProps> = ({
   const totalOutputGst = outputCgst + outputSgst + outputIgst;
 
   const totalInputGstPaid = gstExpenses.reduce((s, g) => s + (g.gstAmount || 0), 0);
-  const totalExpenseTaxable = gstExpenses.reduce((s, g) => s + (g.taxableAmount || 0), 0);
-  const totalExpenseAmount = gstExpenses.reduce((s, g) => s + (g.totalAmount || 0), 0);
-
   const netGstPayable = totalOutputGst - totalInputGstPaid;
 
   const filteredExpenses = gstExpenses.filter(e => {
@@ -79,28 +75,30 @@ export const GstTrackerView: React.FC<GstTrackerViewProps> = ({
   };
 
   return (
-    <div className="space-y-4 pb-16">
+    <div className="space-y-5 pb-20 animate-fade-in">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-amber-400" />
-            GST Center & Input Tax Credit (ITC)
+          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <Receipt className="w-4 h-4" />
+            </div>
+            <span>GST Center & Input Credit</span>
           </h2>
-          <p className="text-xs text-slate-400">Track GST collected on tenant bills and GST paid on building expenses</p>
+          <p className="text-xs text-slate-400 mt-0.5">Track GST collected on tenant rents vs GST paid on building expenses</p>
         </div>
         <div className="flex items-center space-x-2 self-start sm:self-auto">
           <button
             onClick={handleExportCsv}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center space-x-1.5 transition"
-            title="Export GST sheet for accountant"
+            className="px-3.5 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-200 text-xs font-bold flex items-center space-x-1.5 transition active:scale-95 border border-white/10"
+            title="Export CSV for your CA / Accountant"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-indigo-400" />
             <span>Export CSV</span>
           </button>
           <button
             onClick={onOpenAddGstExpense}
-            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-amber-600/30 transition"
+            className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center space-x-2 shadow-lg shadow-amber-500/20 transition active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Record GST Paid</span>
@@ -111,46 +109,52 @@ export const GstTrackerView: React.FC<GstTrackerViewProps> = ({
       {/* GST Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Output GST Collected */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">Output GST Collected</span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+        <div className="glass-card rounded-2xl p-4 border-emerald-500/20 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">Output GST Collected</span>
+            <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl font-black text-emerald-400">{formatCurrency(totalOutputGst)}</div>
-          <div className="mt-1 text-[11px] text-slate-400">
+          <div className="text-2xl font-black text-emerald-400">{formatCurrency(totalOutputGst)}</div>
+          <div className="mt-2 text-[11px] text-slate-400">
             From tenant invoices (CGST: {formatCurrency(outputCgst)}, SGST: {formatCurrency(outputSgst)})
           </div>
         </div>
 
         {/* Input GST Paid on Building */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">Input GST Paid (ITC)</span>
-            <TrendingDown className="w-4 h-4 text-amber-400" />
+        <div className="glass-card rounded-2xl p-4 border-amber-500/20 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">Input GST Paid (ITC)</span>
+            <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-400">
+              <TrendingDown className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl font-black text-amber-400">{formatCurrency(totalInputGstPaid)}</div>
-          <div className="mt-1 text-[11px] text-slate-400">
-            Tax paid to maintenance, repairs & vendors
+          <div className="text-2xl font-black text-amber-400">{formatCurrency(totalInputGstPaid)}</div>
+          <div className="mt-2 text-[11px] text-slate-400">
+            Tax paid on lift AMC, repairs, security & maintenance
           </div>
         </div>
 
         {/* Net GST Payable */}
-        <div className="bg-slate-900 border border-indigo-900/60 rounded-2xl p-4 shadow-xl bg-gradient-to-br from-slate-900 to-indigo-950/60">
-          <div className="flex items-center justify-between text-indigo-300 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">Net GST Liability</span>
-            <Percent className="w-4 h-4 text-indigo-400" />
+        <div className="glass-card rounded-2xl p-4 border-purple-500/20 bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-900 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-purple-300 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-300">Net Tax Liability</span>
+            <div className="p-1.5 rounded-lg bg-purple-500/15 text-purple-400">
+              <Percent className="w-4 h-4" />
+            </div>
           </div>
-          <div className={`text-xl font-black ${netGstPayable >= 0 ? 'text-indigo-300' : 'text-emerald-400'}`}>
+          <div className={`text-2xl font-black ${netGstPayable >= 0 ? 'text-purple-300' : 'text-emerald-400'}`}>
             {formatCurrency(Math.abs(netGstPayable))}
           </div>
-          <div className="mt-1 text-[11px] text-slate-300">
-            {netGstPayable >= 0 ? 'Net Tax to Pay to Govt' : 'Excess Input Tax Credit to Carry Forward'}
+          <div className="mt-2 text-[11px] text-slate-300">
+            {netGstPayable >= 0 ? 'Net Tax to Pay to Government' : 'Excess Input Tax Credit to Carry Forward'}
           </div>
         </div>
       </div>
 
       {/* Search & Category Filter */}
-      <div className="flex flex-col sm:flex-row gap-2.5">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
@@ -158,86 +162,94 @@ export const GstTrackerView: React.FC<GstTrackerViewProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search vendor, description, GSTIN or bill number..."
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 backdrop-blur-md transition"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-3 text-slate-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none shrink-0"
+          className="bg-slate-900/80 border border-white/10 rounded-2xl px-4 py-2.5 text-xs font-bold text-white focus:outline-none shrink-0 backdrop-blur-md"
         >
-          <option value="all">All Categories</option>
+          <option value="all">All Expense Categories</option>
           <option value="maintenance">Maintenance</option>
           <option value="repairs">Repairs & Renovation</option>
-          <option value="lift">Lift AMC</option>
+          <option value="lift">Lift / Elevator AMC</option>
           <option value="electricity">Electrical & Generator</option>
-          <option value="security">Security</option>
-          <option value="cleaning">Cleaning</option>
-          <option value="other">Other</option>
+          <option value="security">Security & CCTV</option>
+          <option value="cleaning">Housekeeping / Cleaning</option>
+          <option value="other">Other Work</option>
         </select>
       </div>
 
       {/* Expenses List */}
       {filteredExpenses.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
-          <Receipt className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-300 font-semibold text-sm">No GST expenses recorded</p>
-          <p className="text-slate-500 text-xs mt-1">
-            {searchTerm ? 'Try adjusting your search query' : 'Click "Record GST Paid" to log GST bills paid on building work'}
+        <div className="glass-card rounded-3xl p-12 text-center flex flex-col items-center">
+          <Receipt className="w-12 h-12 text-slate-600 mb-3" />
+          <h4 className="text-white font-bold text-base">No GST expenses recorded</h4>
+          <p className="text-slate-400 text-xs mt-1 max-w-sm">
+            {searchTerm ? 'Try adjusting your search criteria.' : 'Click "Record GST Paid" to log GST bills paid on building work.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredExpenses.map(e => (
             <div
               key={e.id}
-              className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 shadow-xl transition flex flex-col justify-between"
+              className="glass-card rounded-3xl p-5 flex flex-col justify-between border-white/[0.08] hover:border-white/20 transition-all duration-200"
             >
               <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-3 mb-2.5">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-amber-400 capitalize bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/40">
+                      <span className="text-xs font-bold text-amber-400 capitalize bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg">
                         {e.category}
                       </span>
-                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <span className="text-[11px] text-slate-400 flex items-center gap-1 font-medium">
                         <Calendar className="w-3 h-3" />
                         {formatDate(e.date)}
                       </span>
                     </div>
-                    <h3 className="text-sm font-bold text-white mt-1.5">{e.vendorName}</h3>
+                    <h3 className="text-base font-bold text-white mt-1.5">{e.vendorName}</h3>
                     {e.vendorGstin && (
                       <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                        GSTIN: <span className="text-slate-300">{e.vendorGstin}</span>
+                        GSTIN: <span className="text-slate-300 font-semibold">{e.vendorGstin}</span>
                       </p>
                     )}
                   </div>
 
-                  <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                  <span className="text-xs font-mono font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-xl">
                     {e.invoiceNumber || 'No Bill #'}
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-300 mb-2.5">{e.description}</p>
+                <p className="text-xs text-slate-300 mb-3">{e.description}</p>
 
-                {/* Amount details */}
-                <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/60 space-y-1.5 text-xs">
+                {/* Amount details card */}
+                <div className="rounded-2xl p-3.5 bg-black/20 border border-white/5 space-y-1.5 text-xs mb-3">
                   <div className="flex justify-between text-slate-400">
                     <span>Taxable Base Amount:</span>
-                    <span className="text-slate-300 font-medium">{formatCurrency(e.taxableAmount)}</span>
+                    <span className="text-slate-200 font-semibold">{formatCurrency(e.taxableAmount)}</span>
                   </div>
-                  <div className="flex justify-between text-amber-400 font-medium">
+                  <div className="flex justify-between text-amber-400 font-semibold">
                     <span>GST Paid ({e.gstRate}% ITC):</span>
                     <span>+{formatCurrency(e.gstAmount)}</span>
                   </div>
-                  <div className="pt-1 border-t border-slate-800 flex justify-between font-bold text-white">
+                  <div className="pt-2 border-t border-white/10 flex justify-between font-black text-white text-sm">
                     <span>Total Amount Paid:</span>
-                    <span className="text-emerald-400 text-sm">{formatCurrency(e.totalAmount)}</span>
+                    <span className="text-emerald-400">{formatCurrency(e.totalAmount)}</span>
                   </div>
                   <div className="text-[11px] text-slate-400 flex justify-between pt-0.5">
-                    <span>Payment Mode:</span>
-                    <span className="capitalize text-slate-300 font-medium">
+                    <span>Payment Method:</span>
+                    <span className="capitalize text-slate-200 font-semibold">
                       {e.paymentMethod} {e.onlineRef ? `(${e.onlineRef})` : ''}
                     </span>
                   </div>
@@ -245,27 +257,27 @@ export const GstTrackerView: React.FC<GstTrackerViewProps> = ({
               </div>
 
               {/* Bottom bar */}
-              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between mt-3">
+              <div className="pt-3 border-t border-white/5 flex items-center justify-between">
                 <div>
                   {e.billAttachment ? (
                     <button
                       onClick={() => onViewDocument(`GST Bill: ${e.vendorName}`, e.billAttachment!, e.billAttachmentName)}
-                      className="flex items-center space-x-1.5 text-xs text-amber-400 hover:text-amber-300 bg-amber-950/50 px-2.5 py-1 rounded-lg border border-amber-800/40"
+                      className="flex items-center space-x-1.5 text-[11px] text-amber-400 hover:text-amber-300 font-bold bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-xl border border-amber-500/20 transition"
                     >
                       <Paperclip className="w-3.5 h-3.5" />
-                      <span>View Attached GST Bill</span>
+                      <span>View Vendor GST Bill</span>
                     </button>
                   ) : (
-                    <span className="text-slate-600 text-[10px]">No bill photo</span>
+                    <span className="text-[10px] text-slate-600">No attached bill</span>
                   )}
                 </div>
 
                 <button
                   onClick={() => handleDeleteExpense(e.id!)}
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-950/60 text-slate-500 hover:text-red-400 transition"
-                  title="Delete expense"
+                  className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-500 hover:text-rose-400 transition active:scale-95"
+                  title="Delete Expense"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>

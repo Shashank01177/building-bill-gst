@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, Upload, CheckCircle2, Wallet, CreditCard, Banknote, Trash2 } from 'lucide-react';
+import { X, Camera, Upload, CheckCircle2, Wallet, CreditCard, Banknote, Trash2, ArrowRight } from 'lucide-react';
 import { db, type Bill, type Organization, type Payment } from '../db';
 import { compressAndConvertImage, formatCurrency } from '../utils/formatters';
 
@@ -52,7 +52,6 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
         if (b) {
           setBillId(b.id!);
           setOrgId(b.orgId);
-          // Suggest online amount as remaining balance by default
           setOnlineAmount(b.balanceAmount > 0 ? b.balanceAmount : 0);
           setCashAmount(0);
         }
@@ -79,10 +78,9 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
   const handleOrgSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const oId = Number(e.target.value);
     setOrgId(oId || '');
-    setBillId(''); // Reset bill when org changes
+    setBillId('');
   };
 
-  // Filter bills belonging to the selected organization
   const orgBills = bills.filter(b => (!orgId || b.orgId === orgId) && b.balanceAmount > 0);
   const selectedBill = bills.find(b => b.id === Number(billId));
 
@@ -148,7 +146,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
     await db.payments.add(newPayment);
 
-    // If linked to a bill, update the bill's paid amount & status
+    // If linked to a bill, update bill's paid amount & status
     if (selectedBill && selectedBill.id) {
       const newPaid = selectedBill.paidAmount + totalAmountReceived;
       const newBalance = Math.max(0, selectedBill.totalAmount - newPaid);
@@ -174,26 +172,31 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="bg-[#0f172a]/95 border border-white/10 rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden backdrop-blur-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/60">
-          <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-emerald-400" />
-              Record Tenant Payment
-            </h2>
-            <p className="text-xs text-slate-400">Store Cash, Online split & attach payment receipt</p>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-white/[0.02]">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-white">Record Tenant Payment</h2>
+              <p className="text-xs text-slate-400">Cash & online split with receipt voucher</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-950/70 border border-red-800 text-red-200 text-xs rounded-xl">
+            <div className="p-3 bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold rounded-2xl">
               {error}
             </div>
           )}
@@ -201,16 +204,16 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
           {/* Org & Linked Bill */}
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 Business Organisation *
               </label>
               <select
                 value={orgId}
                 onChange={handleOrgSelect}
                 required
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
               >
-                <option value="">-- Select Organisation --</option>
+                <option value="">-- Select Tenant Organisation --</option>
                 {organizations.map(o => (
                   <option key={o.id} value={o.id}>
                     {o.name} ({o.unitNo})
@@ -220,15 +223,15 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 Against Bill / Invoice (Optional)
               </label>
               <select
                 value={billId}
                 onChange={handleBillSelect}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
               >
-                <option value="">-- General Payment / No specific bill --</option>
+                <option value="">-- General Payment / Direct Receipt --</option>
                 {orgBills.map(b => (
                   <option key={b.id} value={b.id}>
                     {b.billNumber} ({b.billingMonth}) - Due: {formatCurrency(b.balanceAmount)}
@@ -236,10 +239,10 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 ))}
               </select>
               {selectedBill && (
-                <div className="mt-1.5 text-xs text-amber-400 flex justify-between bg-amber-950/30 p-2 rounded-lg border border-amber-800/40">
-                  <span>Bill Total: {formatCurrency(selectedBill.totalAmount)}</span>
-                  <span>Already Paid: {formatCurrency(selectedBill.paidAmount)}</span>
-                  <span className="font-bold">Pending: {formatCurrency(selectedBill.balanceAmount)}</span>
+                <div className="mt-2 text-xs text-amber-300 flex justify-between bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 font-medium">
+                  <span>Invoice Total: {formatCurrency(selectedBill.totalAmount)}</span>
+                  <span>Paid: {formatCurrency(selectedBill.paidAmount)}</span>
+                  <span className="font-bold text-amber-400">Balance: {formatCurrency(selectedBill.balanceAmount)}</span>
                 </div>
               )}
             </div>
@@ -248,19 +251,19 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
           {/* Receipt Number & Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Receipt / Voucher Number
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Receipt Number
               </label>
               <input
                 type="text"
                 value={paymentNumber}
                 onChange={(e) => setPaymentNumber(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                 placeholder="REC-2026-001"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 Payment Date *
               </label>
               <input
@@ -268,53 +271,53 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
                 required
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
               />
             </div>
           </div>
 
           {/* Split Payment Section: Cash & Online */}
-          <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 space-y-3">
+          <div className="rounded-3xl p-4 bg-white/[0.02] border border-white/10 space-y-3.5">
             <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
               <Banknote className="w-4 h-4" />
-              Payment Breakdown (Cash & Online)
+              <span>Split Payment Breakdown (Cash & Online)</span>
             </h3>
 
             {/* Cash Input */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+                <label className="block text-xs font-semibold text-amber-300 mb-1 flex items-center gap-1.5">
                   <Banknote className="w-3.5 h-3.5 text-amber-400" />
                   Amount Paid in Cash
                 </label>
-                <div className="flex items-center bg-slate-900 border border-slate-700 rounded-xl px-3 py-2">
-                  <span className="text-amber-400 font-bold mr-1">₹</span>
+                <div className="flex items-center bg-slate-900/90 border border-amber-500/30 rounded-2xl px-4 py-2.5">
+                  <span className="text-amber-400 font-bold mr-1.5">₹</span>
                   <input
                     type="number"
                     min="0"
                     value={cashAmount || ''}
                     onChange={(e) => setCashAmount(Number(e.target.value) || 0)}
                     placeholder="0"
-                    className="w-full bg-transparent text-white font-semibold text-sm focus:outline-none"
+                    className="w-full bg-transparent text-white font-bold text-sm focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Online Input */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+                <label className="block text-xs font-semibold text-sky-300 mb-1 flex items-center gap-1.5">
                   <CreditCard className="w-3.5 h-3.5 text-sky-400" />
                   Amount Paid Online (UPI/Bank)
                 </label>
-                <div className="flex items-center bg-slate-900 border border-slate-700 rounded-xl px-3 py-2">
-                  <span className="text-sky-400 font-bold mr-1">₹</span>
+                <div className="flex items-center bg-slate-900/90 border border-sky-500/30 rounded-2xl px-4 py-2.5">
+                  <span className="text-sky-400 font-bold mr-1.5">₹</span>
                   <input
                     type="number"
                     min="0"
                     value={onlineAmount || ''}
                     onChange={(e) => setOnlineAmount(Number(e.target.value) || 0)}
                     placeholder="0"
-                    className="w-full bg-transparent text-white font-semibold text-sm focus:outline-none"
+                    className="w-full bg-transparent text-white font-bold text-sm focus:outline-none"
                   />
                 </div>
               </div>
@@ -323,7 +326,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             {/* Online Reference / UTR Number */}
             {onlineAmount > 0 && (
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Online Transfer Ref / UTR / Cheque Number
                 </label>
                 <input
@@ -331,31 +334,31 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                   value={onlineRefNumber}
                   onChange={(e) => setOnlineRefNumber(e.target.value)}
                   placeholder="e.g. UTR-49102931481 or Cheque #004521"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                  className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 font-mono"
                 />
               </div>
             )}
 
             {/* Total Received Summary */}
-            <div className="pt-2 border-t border-slate-700 flex items-center justify-between">
-              <span className="text-xs text-slate-300">Total Payment Received:</span>
-              <span className="text-base font-extrabold text-emerald-400">
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+              <span className="text-xs text-slate-300 font-semibold">Total Amount Received:</span>
+              <span className="text-lg font-black text-emerald-400">
                 {formatCurrency(totalAmountReceived)}
               </span>
             </div>
 
             {selectedBill && (
               <div className="text-[11px] text-slate-400 flex justify-between">
-                <span>Remaining on this bill after payment:</span>
-                <span className={`font-semibold ${selectedBill.balanceAmount - totalAmountReceived <= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <span>Remaining balance after this payment:</span>
+                <span className={`font-bold ${selectedBill.balanceAmount - totalAmountReceived <= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
                   {formatCurrency(Math.max(0, selectedBill.balanceAmount - totalAmountReceived))}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Attach Payment Bill / Receipt Screenshot */}
-          <div className="border border-dashed border-slate-700 rounded-xl p-4 bg-slate-950/30 text-center">
+          {/* Attach Payment Receipt Proof */}
+          <div className="border border-dashed border-white/15 rounded-3xl p-4 bg-white/[0.02] text-center">
             <input
               type="file"
               id="payment-file-upload"
@@ -365,12 +368,12 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
               className="hidden"
             />
             {attachment ? (
-              <div className="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-emerald-500/40">
-                <div className="flex items-center space-x-2.5 overflow-hidden text-left">
+              <div className="flex items-center justify-between bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/30">
+                <div className="flex items-center space-x-3 overflow-hidden text-left">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div className="truncate">
-                    <p className="text-xs font-semibold text-white truncate">{attachmentName || 'Payment Slip'}</p>
-                    <p className="text-[10px] text-emerald-400">Payment receipt stored</p>
+                    <p className="text-xs font-bold text-white truncate">{attachmentName || 'Payment Slip'}</p>
+                    <p className="text-[10px] text-emerald-300">Payment receipt stored in app</p>
                   </div>
                 </div>
                 <button
@@ -380,7 +383,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                     setAttachmentName(undefined);
                     setAttachmentType(undefined);
                   }}
-                  className="p-1.5 text-slate-400 hover:text-red-400 transition"
+                  className="p-1.5 text-slate-400 hover:text-rose-400 transition"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -388,14 +391,14 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             ) : (
               <label
                 htmlFor="payment-file-upload"
-                className="cursor-pointer flex flex-col items-center justify-center space-y-1.5 py-1 text-slate-400 hover:text-emerald-300 transition"
+                className="cursor-pointer flex flex-col items-center justify-center space-y-2 py-2 text-slate-400 hover:text-emerald-300 transition"
               >
                 <div className="flex items-center space-x-2">
-                  <Camera className="w-5 h-5 text-emerald-400" />
-                  <Upload className="w-5 h-5 text-emerald-400" />
+                  <Camera className="w-6 h-6 text-emerald-400" />
+                  <Upload className="w-6 h-6 text-emerald-400" />
                 </div>
-                <span className="text-xs font-medium text-slate-300">
-                  {isUploading ? 'Saving receipt...' : 'Attach Payment Receipt / UPI Screenshot / Cheque Photo'}
+                <span className="text-xs font-bold text-slate-200">
+                  {isUploading ? 'Compressing receipt...' : 'Snap Photo or Attach Payment Slip / UPI Screenshot'}
                 </span>
                 <span className="text-[10px] text-slate-500">Camera photo or file upload stored locally</span>
               </label>
@@ -404,33 +407,33 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Payment Remarks
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+              Remarks
             </label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Handed over cash by Mr. Sharma, online transfer cleared"
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              placeholder="e.g. Received cash by hand, online transfer verified"
+              className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             />
           </div>
 
           {/* Submit */}
-          <div className="pt-2 flex items-center justify-end space-x-2.5">
+          <div className="pt-2 flex items-center justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/30 transition flex items-center space-x-1.5"
+              className="px-6 py-2.5 rounded-2xl text-xs font-black text-slate-950 bg-emerald-400 hover:bg-emerald-300 shadow-lg shadow-emerald-400/20 transition active:scale-95 flex items-center space-x-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Save Payment Record</span>
+              <span>Save Payment</span>
             </button>
           </div>
         </form>

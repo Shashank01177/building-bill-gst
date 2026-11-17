@@ -8,12 +8,10 @@ import {
   Settings, 
   Plus, 
   Home, 
-  Layers,
-  Smartphone,
   ChevronDown
 } from 'lucide-react';
 
-import { db, initDemoDataIfEmpty, type Organization, type Bill } from './db';
+import { db, initDemoDataIfEmpty, type Organization } from './db';
 import { DashboardView } from './components/DashboardView';
 import { BillsView } from './components/BillsView';
 import { PaymentsView } from './components/PaymentsView';
@@ -99,19 +97,23 @@ export function App() {
   const pendingBillsCount = bills.filter(b => b.balanceAmount > 0).length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
-      {/* Top Mobile/Desktop Header */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-2.5 sm:py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative">
+      {/* Subtle Background Glows */}
+      <div className="fixed top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[128px] pointer-events-none" />
+      <div className="fixed bottom-1/4 right-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-[128px] pointer-events-none" />
+
+      {/* 🌟 TOP APP HEADER */}
+      <header className="sticky top-0 z-40 bg-[#090d16]/85 backdrop-blur-2xl border-b border-white/[0.08] px-4 py-3 sm:py-3.5 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 p-0.5 shadow-md shadow-indigo-500/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 p-0.5 shadow-lg shadow-indigo-500/25 flex items-center justify-center shrink-0">
             <Building2 className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-1.5">
+          <div className="min-w-0">
+            <h1 className="text-sm sm:text-base font-black text-white tracking-tight truncate flex items-center gap-1.5">
               <span>{profile?.buildingName || 'Building Bill Manager'}</span>
             </h1>
-            <p className="text-[11px] text-slate-400 truncate max-w-[200px] sm:max-w-none">
-              {profile?.ownerName ? `${profile.ownerName} • Tenant & GST Tracker` : 'Tenant Billing & Payment Tracker'}
+            <p className="text-[11px] text-slate-400 truncate max-w-[180px] sm:max-w-none">
+              {profile?.ownerName ? `${profile.ownerName} • Commercial Space Billing` : 'Tenant Billing & Payment Tracker'}
             </p>
           </div>
         </div>
@@ -122,25 +124,27 @@ export function App() {
           <div className="relative">
             <button
               onClick={() => setIsQuickMenuOpen(!isQuickMenuOpen)}
-              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center space-x-1 shadow-lg shadow-indigo-600/30 transition"
+              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-indigo-600/30 transition active:scale-95"
             >
               <Plus className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Add</span>
-              <ChevronDown className="w-3 h-3 ml-0.5 opacity-80" />
+              <ChevronDown className="w-3 h-3 opacity-80" />
             </button>
 
             {isQuickMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsQuickMenuOpen(false)} />
-                <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl py-2 z-50 text-xs animate-fadeIn">
+                <div className="absolute right-0 mt-2 w-52 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl py-2 z-50 text-xs animate-slide-up">
                   <button
                     onClick={() => {
                       setIsQuickMenuOpen(false);
                       handleOpenAddBill();
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-800 flex items-center space-x-2 text-slate-200"
+                    className="w-full text-left px-4 py-2.5 hover:bg-white/5 flex items-center space-x-2.5 text-slate-200 transition"
                   >
-                    <FileText className="w-4 h-4 text-indigo-400" />
+                    <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
+                      <FileText className="w-3.5 h-3.5" />
+                    </div>
                     <span>Send New Bill</span>
                   </button>
                   <button
@@ -148,31 +152,37 @@ export function App() {
                       setIsQuickMenuOpen(false);
                       handleOpenAddPayment();
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-800 flex items-center space-x-2 text-slate-200"
+                    className="w-full text-left px-4 py-2.5 hover:bg-white/5 flex items-center space-x-2.5 text-slate-200 transition"
                   >
-                    <Wallet className="w-4 h-4 text-emerald-400" />
-                    <span>Record Payment (Cash/Online)</span>
+                    <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                      <Wallet className="w-3.5 h-3.5" />
+                    </div>
+                    <span>Record Payment</span>
                   </button>
                   <button
                     onClick={() => {
                       setIsQuickMenuOpen(false);
                       setIsAddGstOpen(true);
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-800 flex items-center space-x-2 text-slate-200"
+                    className="w-full text-left px-4 py-2.5 hover:bg-white/5 flex items-center space-x-2.5 text-slate-200 transition"
                   >
-                    <Receipt className="w-4 h-4 text-amber-400" />
+                    <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                      <Receipt className="w-3.5 h-3.5" />
+                    </div>
                     <span>Record GST Expense</span>
                   </button>
-                  <div className="border-t border-slate-800 my-1" />
+                  <div className="border-t border-white/10 my-1" />
                   <button
                     onClick={() => {
                       setIsQuickMenuOpen(false);
                       setEditingOrg(null);
                       setIsAddOrgOpen(true);
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-800 flex items-center space-x-2 text-slate-200"
+                    className="w-full text-left px-4 py-2.5 hover:bg-white/5 flex items-center space-x-2.5 text-slate-200 transition"
                   >
-                    <Building2 className="w-4 h-4 text-sky-400" />
+                    <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-400">
+                      <Building2 className="w-3.5 h-3.5" />
+                    </div>
                     <span>Add Business Tenant</span>
                   </button>
                 </div>
@@ -180,11 +190,11 @@ export function App() {
             )}
           </div>
 
-          {/* Settings / APK Info Button */}
+          {/* Settings Button */}
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
-            title="Building Settings, Backup & APK Install"
+            className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition active:scale-95"
+            title="Building Profile, Backup & APK Install"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -192,7 +202,7 @@ export function App() {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-3.5 sm:p-5">
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
         {activeTab === 'dashboard' && (
           <DashboardView
             organizations={organizations}
@@ -259,13 +269,15 @@ export function App() {
         )}
       </main>
 
-      {/* Modern Bottom Navigation Bar (Optimized for Android Mobile Navigation) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-safe">
-        <div className="max-w-md mx-auto grid grid-cols-5 px-1 py-1.5">
+      {/* 🚀 FLOATING DOCK BOTTOM NAVIGATION (Optimized for Android Touch) */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 p-2 sm:p-3 pointer-events-none flex justify-center pb-safe">
+        <nav className="pointer-events-auto bg-slate-900/95 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl sm:rounded-full px-2 py-1.5 flex items-center justify-around w-full max-w-md">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex flex-col items-center justify-center py-1 transition relative ${
-              activeTab === 'dashboard' ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+              activeTab === 'dashboard' 
+                ? 'text-indigo-400 bg-indigo-500/15 font-black scale-105' 
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Home className="w-5 h-5 mb-0.5" />
@@ -274,8 +286,10 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('tenants')}
-            className={`flex flex-col items-center justify-center py-1 transition relative ${
-              activeTab === 'tenants' ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+              activeTab === 'tenants' 
+                ? 'text-sky-400 bg-sky-500/15 font-black scale-105' 
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Building2 className="w-5 h-5 mb-0.5" />
@@ -284,25 +298,29 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('bills')}
-            className={`flex flex-col items-center justify-center py-1 transition relative ${
-              activeTab === 'bills' ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+              activeTab === 'bills' 
+                ? 'text-indigo-400 bg-indigo-500/15 font-black scale-105' 
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <div className="relative">
               <FileText className="w-5 h-5 mb-0.5" />
               {pendingBillsCount > 0 && (
-                <span className="absolute -top-1 -right-2 bg-rose-500 text-white text-[9px] font-bold px-1 rounded-full min-w-[14px] text-center">
+                <span className="absolute -top-1 -right-2 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-[14px] text-center shadow">
                   {pendingBillsCount}
                 </span>
               )}
             </div>
-            <span className="text-[10px] tracking-tight">Bills Sent</span>
+            <span className="text-[10px] tracking-tight">Bills</span>
           </button>
 
           <button
             onClick={() => setActiveTab('payments')}
-            className={`flex flex-col items-center justify-center py-1 transition relative ${
-              activeTab === 'payments' ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+              activeTab === 'payments' 
+                ? 'text-emerald-400 bg-emerald-500/15 font-black scale-105' 
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Wallet className="w-5 h-5 mb-0.5" />
@@ -311,15 +329,17 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('gst')}
-            className={`flex flex-col items-center justify-center py-1 transition relative ${
-              activeTab === 'gst' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl sm:rounded-full transition-all duration-200 relative ${
+              activeTab === 'gst' 
+                ? 'text-amber-400 bg-amber-500/15 font-black scale-105' 
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Receipt className="w-5 h-5 mb-0.5" />
-            <span className="text-[10px] tracking-tight">GST Center</span>
+            <span className="text-[10px] tracking-tight">GST</span>
           </button>
-        </div>
-      </nav>
+        </nav>
+      </div>
 
       {/* Modals */}
       <AddBillModal

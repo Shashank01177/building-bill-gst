@@ -7,11 +7,13 @@ import {
   Share2, 
   Wallet, 
   Trash2, 
-  CheckCircle2, 
-  Clock, 
-  Paperclip,
   Calendar,
-  Building2
+  Building2,
+  Paperclip,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import { db, type Bill, type BuildingProfile } from '../db';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -74,27 +76,30 @@ Thank you!`;
   };
 
   return (
-    <div className="space-y-4 pb-16">
-      {/* Top Bar */}
+    <div className="space-y-5 pb-20 animate-fade-in">
+      {/* Header with Title & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <FileText className="w-5 h-5 text-indigo-400" />
-            Bills & Invoices Sent to Tenants
+          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+              <FileText className="w-4 h-4" />
+            </div>
+            <span>Bills & Invoices Sent</span>
           </h2>
-          <p className="text-xs text-slate-400">Track all invoices issued to businesses staying in your building</p>
+          <p className="text-xs text-slate-400 mt-0.5">Manage outgoing rent & utility bills issued to tenant businesses</p>
         </div>
         <button
           onClick={onOpenAddBill}
-          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 shadow-lg shadow-indigo-600/30 transition self-start sm:self-auto"
+          className="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 transition active:scale-95 self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Create New Bill</span>
+          <span>New Bill</span>
         </button>
       </div>
 
-      {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-2.5">
+      {/* Search & Segmented Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search */}
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
@@ -102,19 +107,27 @@ Thank you!`;
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by bill number, tenant or month..."
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md transition"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-3 text-slate-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex bg-slate-900 border border-slate-800 rounded-xl p-1 shrink-0">
+        {/* Segmented Filter Pills */}
+        <div className="flex bg-slate-900/80 border border-white/10 rounded-2xl p-1 shrink-0 backdrop-blur-md overflow-x-auto">
           {(['all', 'unpaid', 'partial', 'paid'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all duration-200 ${
                 statusFilter === tab
-                  ? 'bg-indigo-600 text-white shadow'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -124,134 +137,150 @@ Thank you!`;
         </div>
       </div>
 
-      {/* Bills Cards List */}
+      {/* Bills Cards Grid */}
       {filteredBills.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
-          <FileText className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-300 font-semibold text-sm">No bills found</p>
-          <p className="text-slate-500 text-xs mt-1">
-            {searchTerm ? 'Try adjusting your search criteria' : 'Click "Create New Bill" to generate your first invoice'}
+        <div className="glass-card rounded-3xl p-12 text-center flex flex-col items-center">
+          <FileText className="w-12 h-12 text-slate-600 mb-3" />
+          <h4 className="text-white font-bold text-base">No bills found</h4>
+          <p className="text-slate-400 text-xs mt-1 max-w-sm">
+            {searchTerm ? 'Try searching with a different keyword.' : 'Start by clicking "New Bill" to generate an invoice for your tenants.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredBills.map(b => {
             const isFullyPaid = b.balanceAmount <= 0;
             const isPartial = b.paidAmount > 0 && b.balanceAmount > 0;
+            const paidPct = b.totalAmount > 0 ? Math.round((b.paidAmount / b.totalAmount) * 100) : 0;
 
             return (
               <div
                 key={b.id}
-                className="bg-slate-900 border border-slate-800/90 hover:border-slate-700 rounded-2xl p-4 shadow-xl transition flex flex-col justify-between"
+                className="glass-card rounded-3xl p-5 flex flex-col justify-between border-white/[0.08] hover:border-white/20 transition-all duration-200"
               >
                 <div>
                   {/* Top Header */}
-                  <div className="flex items-start justify-between gap-2 mb-2.5">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-xs font-bold text-indigo-400">{b.billNumber}</span>
-                        <span className="text-[11px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">
-                          {b.billingMonth}
-                        </span>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center font-black text-white text-sm shrink-0 shadow-lg shadow-indigo-600/20">
+                        {b.orgName.substring(0, 2).toUpperCase()}
                       </div>
-                      <h3 className="text-sm font-bold text-white mt-1 flex items-center gap-1.5">
-                        <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span className="truncate">{b.orgName}</span>
-                      </h3>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono text-xs font-bold text-indigo-400">{b.billNumber}</span>
+                          <span className="text-[10px] text-slate-400 bg-white/5 px-2 py-0.5 rounded-full font-medium">
+                            {b.billingMonth}
+                          </span>
+                        </div>
+                        <h3 className="text-sm sm:text-base font-bold text-white mt-0.5 truncate max-w-[200px] sm:max-w-xs">
+                          {b.orgName}
+                        </h3>
+                      </div>
                     </div>
 
-                    {/* Status Badge */}
+                    {/* Status Pill */}
                     <span
-                      className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                      className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 ${
                         isFullyPaid
-                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50'
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                           : isPartial
-                          ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
-                          : 'bg-rose-950 text-rose-400 border border-rose-800/50'
+                          ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                          : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
                       }`}
                     >
                       {b.status}
                     </span>
                   </div>
 
-                  {/* Amounts breakdown */}
-                  <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/60 space-y-1.5 my-2.5 text-xs">
+                  {/* Financial Breakdown Box */}
+                  <div className="rounded-2xl p-3.5 bg-black/20 border border-white/5 space-y-2 text-xs mb-3">
                     <div className="flex justify-between text-slate-400">
                       <span>Base Charges:</span>
-                      <span className="text-slate-300 font-medium">{formatCurrency(b.subtotal)}</span>
+                      <span className="text-slate-200 font-semibold">{formatCurrency(b.subtotal)}</span>
                     </div>
+
                     {b.gstRate > 0 && (
                       <div className="flex justify-between text-slate-400">
                         <span>GST ({b.gstRate}%):</span>
-                        <span className="text-indigo-300 font-medium">
+                        <span className="text-purple-300 font-semibold">
                           +{formatCurrency(b.cgstAmount + b.sgstAmount + b.igstAmount)}
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between pt-1 border-t border-slate-800 font-bold text-white">
-                      <span>Total Bill:</span>
+
+                    <div className="pt-2 border-t border-white/10 flex justify-between font-black text-white text-sm">
+                      <span>Total Invoice:</span>
                       <span className="text-white">{formatCurrency(b.totalAmount)}</span>
                     </div>
-                    <div className="flex justify-between text-emerald-400 pt-0.5">
-                      <span>Amount Paid:</span>
-                      <span>{formatCurrency(b.paidAmount)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold pt-1 border-t border-slate-800">
-                      <span className="text-slate-300">Balance Pending:</span>
-                      <span className={b.balanceAmount > 0 ? 'text-rose-400' : 'text-emerald-400'}>
-                        {formatCurrency(b.balanceAmount)}
-                      </span>
+
+                    {/* Payment Progress Bar */}
+                    <div className="pt-1">
+                      <div className="flex justify-between text-[11px] mb-1">
+                        <span className="text-emerald-400 font-semibold">Paid: {formatCurrency(b.paidAmount)}</span>
+                        <span className={b.balanceAmount > 0 ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>
+                          Due: {formatCurrency(b.balanceAmount)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            isFullyPaid ? 'bg-emerald-400' : 'bg-gradient-to-r from-amber-400 to-emerald-400'
+                          }`}
+                          style={{ width: `${paidPct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Date & Attachment info */}
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 mb-3">
-                    <span className="flex items-center gap-1">
+                  {/* Due Date & Proof Attachment Pill */}
+                  <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                    <div className="flex items-center space-x-1.5 text-[11px]">
                       <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                      Due: {formatDate(b.dueDate)}
-                    </span>
+                      <span>Due: {formatDate(b.dueDate)}</span>
+                    </div>
+
                     {b.billAttachment ? (
                       <button
                         onClick={() => onViewDocument(`Bill: ${b.billNumber}`, b.billAttachment!, b.billAttachmentName, b.billAttachmentType)}
-                        className="flex items-center space-x-1 text-indigo-400 hover:text-indigo-300 bg-indigo-950/50 px-2 py-0.5 rounded-lg border border-indigo-800/40"
+                        className="flex items-center space-x-1 text-[11px] text-indigo-300 hover:text-indigo-200 font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded-lg border border-indigo-500/20 transition"
                       >
                         <Paperclip className="w-3 h-3" />
-                        <span>View Attached Bill</span>
+                        <span>View Attachment</span>
                       </button>
                     ) : (
-                      <span className="text-slate-600 text-[10px]">No attachment</span>
+                      <span className="text-[10px] text-slate-600">No attached file</span>
                     )}
                   </div>
                 </div>
 
-                {/* Bottom Actions Toolbar */}
-                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-1.5">
+                {/* Bottom Action Ribbon */}
+                <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-2">
                   <div className="flex items-center space-x-1.5">
                     {/* PDF Generator */}
                     <button
                       onClick={() => generateBillPDF(b, profile)}
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-indigo-400 hover:text-indigo-300 transition active:scale-95"
                       title="Download PDF Tax Invoice"
                     >
-                      <Download className="w-3.5 h-3.5 text-indigo-400" />
+                      <Download className="w-4 h-4" />
                     </button>
 
                     {/* WhatsApp */}
                     <button
                       onClick={() => handleShareWhatsApp(b)}
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition"
-                      title="Share bill on WhatsApp"
+                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-emerald-400 hover:text-emerald-300 transition active:scale-95"
+                      title="Share Bill on WhatsApp"
                     >
-                      <Share2 className="w-3.5 h-3.5" />
+                      <Share2 className="w-4 h-4" />
                     </button>
 
                     {/* Delete */}
                     <button
                       onClick={() => handleDeleteBill(b.id!)}
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-500 hover:text-red-400 transition"
-                      title="Delete bill"
+                      className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-500 hover:text-rose-400 transition active:scale-95"
+                      title="Delete Bill"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
 
@@ -259,10 +288,10 @@ Thank you!`;
                   {b.balanceAmount > 0 && (
                     <button
                       onClick={() => onOpenAddPayment(b.id!)}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md shadow-emerald-700/20 transition"
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center space-x-1.5 shadow-md shadow-emerald-500/20 transition active:scale-95"
                     >
                       <Wallet className="w-3.5 h-3.5" />
-                      <span>Record Payment</span>
+                      <span>Record Pay</span>
                     </button>
                   )}
                 </div>

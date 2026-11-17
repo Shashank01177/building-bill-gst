@@ -84,71 +84,84 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="bg-[#0f172a]/95 border border-white/10 rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden backdrop-blur-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/60">
-          <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-amber-400" />
-              Record GST Paid on Building
-            </h2>
-            <p className="text-xs text-slate-400">Track Input GST paid for maintenance, repairs & vendors</p>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-white/[0.02]">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-white">Record GST Paid on Building</h2>
+              <p className="text-xs text-slate-400">Track Input Tax Credit for maintenance, lift & repairs</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-3.5">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-950/70 border border-red-800 text-red-200 text-xs rounded-xl">
+            <div className="p-3 bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold rounded-2xl">
               {error}
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Vendor / Contractor Name *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Vendor / Contractor Name *
+              </label>
               <input
                 type="text"
                 required
                 value={vendorName}
                 onChange={(e) => setVendorName(e.target.value)}
                 placeholder="e.g. Otis Elevator, RK Electrician"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Vendor GSTIN (Optional)</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Vendor GSTIN (Optional)
+              </label>
               <input
                 type="text"
                 value={vendorGstin}
                 onChange={(e) => setVendorGstin(e.target.value)}
                 placeholder="27AAFCO1234F1Z8"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-mono uppercase focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white font-mono uppercase focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Expense Date *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Date *
+              </label>
               <input
                 type="date"
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Category
+              </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as any)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 font-semibold"
               >
                 <option value="maintenance">Maintenance</option>
                 <option value="repairs">Repairs & Renovation</option>
@@ -157,53 +170,60 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
                 <option value="security">Security & CCTV</option>
                 <option value="cleaning">Housekeeping / Cleaning</option>
                 <option value="legal">Legal & Professional</option>
-                <option value="other">Other Building Work</option>
+                <option value="other">Other Work</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Vendor Bill No.</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Bill / Inv No.
+              </label>
               <input
                 type="text"
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
                 placeholder="AMC-8491"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none"
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-3 py-2 text-xs sm:text-sm text-white font-mono focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Description / Work Details</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              Work Description
+            </label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Water motor repair, Quarterly lift service"
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+              placeholder="e.g. Quarterly lift servicing AMC, water pump motor replacement"
+              className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none"
             />
           </div>
 
-          {/* Amount and GST calculation */}
-          <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 space-y-3">
+          {/* Amount and GST calculation card */}
+          <div className="rounded-3xl p-4 bg-white/[0.02] border border-white/10 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Taxable Amount (₹) *</label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={taxableAmount || ''}
-                  onChange={(e) => setTaxableAmount(Number(e.target.value) || 0)}
-                  placeholder="0"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none"
-                />
+                <label className="block text-xs font-bold text-slate-300 mb-1">Taxable Amount (₹) *</label>
+                <div className="flex items-center bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5">
+                  <span className="text-amber-400 font-bold mr-1">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={taxableAmount || ''}
+                    onChange={(e) => setTaxableAmount(Number(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-full bg-transparent text-sm text-white font-black focus:outline-none"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">GST Rate %</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1">GST Rate %</label>
                 <select
                   value={gstRate}
                   onChange={(e) => setGstRate(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                  className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white font-bold focus:outline-none"
                 >
                   <option value={5}>5%</option>
                   <option value={12}>12%</option>
@@ -213,22 +233,22 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-700 flex justify-between items-center text-xs text-slate-300">
-              <span>GST Amount Paid (ITC):</span>
-              <span className="text-amber-400 font-bold text-sm">+{formatCurrency(gstAmount)}</span>
+            <div className="pt-2 border-t border-white/10 flex justify-between items-center text-xs text-slate-300">
+              <span className="font-semibold">GST Amount Paid (ITC Credit):</span>
+              <span className="text-amber-400 font-black text-sm">+{formatCurrency(gstAmount)}</span>
             </div>
             <div className="flex justify-between items-center text-xs text-slate-300">
-              <span className="font-semibold text-white">Total Amount Paid to Vendor:</span>
-              <span className="text-emerald-400 font-bold text-base">{formatCurrency(totalAmount)}</span>
+              <span className="font-bold text-white">Total Amount Paid to Vendor:</span>
+              <span className="text-emerald-400 font-black text-base">{formatCurrency(totalAmount)}</span>
             </div>
           </div>
 
           {/* Payment Method */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Payment Method</label>
-              <div className="flex space-x-3 pt-1">
-                <label className="flex items-center space-x-1.5 text-xs text-slate-300 cursor-pointer">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Payment Method</label>
+              <div className="flex space-x-3">
+                <label className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
                   <input
                     type="radio"
                     name="exp-pay"
@@ -237,9 +257,9 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
                     onChange={() => setPaymentMethod('online')}
                     className="text-amber-500 focus:ring-amber-500"
                   />
-                  <span>Online / Bank</span>
+                  <span className="font-semibold">Online / Bank</span>
                 </label>
-                <label className="flex items-center space-x-1.5 text-xs text-slate-300 cursor-pointer">
+                <label className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
                   <input
                     type="radio"
                     name="exp-pay"
@@ -248,27 +268,29 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
                     onChange={() => setPaymentMethod('cash')}
                     className="text-amber-500 focus:ring-amber-500"
                   />
-                  <span>Cash</span>
+                  <span className="font-semibold">Cash</span>
                 </label>
               </div>
             </div>
 
             {paymentMethod === 'online' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">UTR / Ref / Cheque No.</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                  UTR / Ref No.
+                </label>
                 <input
                   type="text"
                   value={onlineRef}
                   onChange={(e) => setOnlineRef(e.target.value)}
                   placeholder="UPI/NEFT Ref"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-mono focus:outline-none"
+                  className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-4 py-2 text-xs sm:text-sm text-white font-mono focus:outline-none"
                 />
               </div>
             )}
           </div>
 
           {/* Attach Vendor Bill Photo */}
-          <div className="border border-dashed border-slate-700 rounded-xl p-3.5 bg-slate-950/30 text-center">
+          <div className="border border-dashed border-white/15 rounded-3xl p-4 bg-white/[0.02] text-center">
             <input
               type="file"
               id="gst-file-upload"
@@ -278,12 +300,12 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
               className="hidden"
             />
             {attachment ? (
-              <div className="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-amber-500/40">
-                <div className="flex items-center space-x-2.5 overflow-hidden text-left">
+              <div className="flex items-center justify-between bg-amber-500/10 p-3 rounded-2xl border border-amber-500/30">
+                <div className="flex items-center space-x-3 overflow-hidden text-left">
                   <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" />
                   <div className="truncate">
-                    <p className="text-xs font-semibold text-white truncate">{attachmentName || 'GST Bill'}</p>
-                    <p className="text-[10px] text-amber-400">Vendor GST bill stored</p>
+                    <p className="text-xs font-bold text-white truncate">{attachmentName || 'GST Bill'}</p>
+                    <p className="text-[10px] text-amber-300">Vendor GST bill stored</p>
                   </div>
                 </div>
                 <button
@@ -292,7 +314,7 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
                     setAttachment(undefined);
                     setAttachmentName(undefined);
                   }}
-                  className="p-1.5 text-slate-400 hover:text-red-400 transition"
+                  className="p-1.5 text-slate-400 hover:text-rose-400 transition"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -300,13 +322,13 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
             ) : (
               <label
                 htmlFor="gst-file-upload"
-                className="cursor-pointer flex flex-col items-center justify-center space-y-1.5 py-1 text-slate-400 hover:text-amber-300 transition"
+                className="cursor-pointer flex flex-col items-center justify-center space-y-2 py-2 text-slate-400 hover:text-amber-300 transition"
               >
                 <div className="flex items-center space-x-2">
-                  <Camera className="w-5 h-5 text-amber-400" />
-                  <Upload className="w-5 h-5 text-amber-400" />
+                  <Camera className="w-6 h-6 text-amber-400" />
+                  <Upload className="w-6 h-6 text-amber-400" />
                 </div>
-                <span className="text-xs font-medium text-slate-300">
+                <span className="text-xs font-bold text-slate-200">
                   {isUploading ? 'Uploading...' : 'Take Photo or Attach Vendor Bill with GST'}
                 </span>
                 <span className="text-[10px] text-slate-500">Keep proof of GST paid for IT returns</span>
@@ -314,17 +336,17 @@ export const AddGstExpenseModal: React.FC<AddGstExpenseModalProps> = ({
             )}
           </div>
 
-          <div className="pt-2 flex items-center justify-end space-x-2.5">
+          <div className="pt-2 flex items-center justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-600/30 transition flex items-center space-x-1.5"
+              className="px-6 py-2.5 rounded-2xl text-xs font-black text-slate-950 bg-amber-400 hover:bg-amber-300 shadow-lg shadow-amber-400/20 transition active:scale-95 flex items-center space-x-2"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Save GST Expense</span>
