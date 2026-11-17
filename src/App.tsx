@@ -10,7 +10,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-import { db, initDemoDataIfEmpty, type Organization } from './db';
+import { db, ensureCleanFreshState, type Organization } from './db';
 import { DashboardView } from './components/DashboardView';
 import { PaymentsView } from './components/PaymentsView';
 import { OrganizationsView } from './components/OrganizationsView';
@@ -51,7 +51,7 @@ export function App() {
 
   // Initialize DB demo data
   useEffect(() => {
-    initDemoDataIfEmpty();
+    ensureCleanFreshState();
   }, []);
 
   // Reactive DB queries

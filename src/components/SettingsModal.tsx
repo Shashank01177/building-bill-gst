@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Building, Download, Upload, Smartphone, CheckCircle2, ShieldCheck, Database, Layers } from 'lucide-react';
-import { db, type BuildingProfile } from '../db';
+import { db, clearAllData, type BuildingProfile } from '../db';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -131,6 +131,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
     } catch (err) {
       alert('Failed to read or parse the backup file.');
+    }
+  };
+
+  
+  const handleWipeAllData = async () => {
+    if (confirm('⚠️ WARNING: This will permanently delete all tenants, payments, bills and GST records, resetting the app as completely fresh. Do you want to proceed?')) {
+      await clearAllData();
+      localStorage.setItem('clean_fresh_purged_v2', 'true');
+      setMsg('All data wiped! App reset to completely clean and fresh.');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
   };
 
@@ -403,6 +415,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                   </label>
                 </div>
+              </div>
+
+              {/* Danger Zone: Wipe Everything */}
+              <div className="rounded-3xl p-5 bg-rose-500/10 border border-rose-500/20 flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+                <div>
+                  <h4 className="text-sm font-bold text-rose-300">Wipe & Reset Everything</h4>
+                  <p className="text-xs text-slate-400 mt-0.5">Delete all records and make the app completely fresh and brand new.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleWipeAllData}
+                  className="px-4 py-2.5 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shrink-0 transition active:scale-95 shadow-md shadow-rose-500/20"
+                >
+                  Clear All Data
+                </button>
               </div>
             </div>
           )}
