@@ -29,9 +29,6 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Dependencies
         run: npm ci
 
@@ -69,7 +66,7 @@ jobs:
           name: Building Bill & GST Manager v1.0.0
           body: |
             ### 📱 Building Bill & GST Manager Android App
-            Download **BuildingBillManager.apk** below and install it directly on your phone!
+            Download **BuildingBillManager.apk** below and install it directly on your Android phone!
           files: output-apk/BuildingBillManager.apk
           draft: false
           prerelease: false
