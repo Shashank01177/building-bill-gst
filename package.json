@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android",
-    "postinstall": "node -e \"const f='node_modules/@capacitor/cli/bin/capacitor'; if(require('fs').existsSync(f)){let s=require('fs').readFileSync(f,'utf8'); s=s.replace('process.exit(1)','/*process.exit(1)*/'); require('fs').writeFileSync(f,s);}\""
+    "postinstall": "node -e \"const fs = require('fs'); const f='node_modules/@capacitor/cli/bin/capacitor'; if(fs.existsSync(f)){let s=fs.readFileSync(f,'utf8'); s=s.replace('process.exit(1)','/*process.exit(1)*/'); fs.writeFileSync(f,s);} const b='node_modules/@capacitor/android/capacitor/build.gradle'; if(fs.existsSync(b)){let s=fs.readFileSync(b,'utf8'); s=s.replaceAll('JavaVersion.VERSION_21','JavaVersion.VERSION_17'); fs.writeFileSync(b,s);}\""
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
